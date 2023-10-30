@@ -44,5 +44,11 @@ public class Movement : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         isGrounded = true;
+        if (collision.gameObject.CompareTag("WaterDrop"))
+        {
+            // Handle the collision as needed, such as triggering a game over state.
+            Debug.Log("Player collided with the water drop zone.");
+        }
     }
+
 }
