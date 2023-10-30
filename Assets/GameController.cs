@@ -11,7 +11,6 @@ public class GameController : MonoBehaviour
     public GameObject player;
     public float end;
     public float width;
-    private List<int> manager;
 
     private void Start()
     {
@@ -22,9 +21,7 @@ public class GameController : MonoBehaviour
 
         // Iterate through all children of the mapGameObject and add them to the list.
         foreach (Transform child in mapGameObject.transform)
-        {
             childrenList.Add(new Child(child));
-        }
 
         // Randomly select two children from the list.
         int index1 = Random.Range(0, childrenList.Count);
@@ -53,35 +50,28 @@ public class GameController : MonoBehaviour
 
             // Randomly select one child from the list.
             int index = Random.Range(0, selection.Count);
-
             end += width;
             selection[index].changeState(end);
-            queue.Enqueue(childrenList[index]);
+            queue.Enqueue(selection[index]);
 
             if (queue.Count > 5)
-            {
                 queue.Dequeue().changeState(end);
-            }
         }
     }
 
     private List<Child> getSelection() 
     {
         List<Child> selection = new List<Child>();
-        int minVal = childrenList.Min(child => child.count);
-
+        int maxCount = childrenList.Max(child => child.count);
         foreach (Child c in childrenList)
-        {
-            if (c.isAvailable && c.count == minVal) 
-            {
-                selection.Add(c);
-            }
-        }
+            if (c.isAvailable) 
+                for(int i = 0; i < maxCount-c.count+1; i++)
+                    selection.Add(c);
         return selection;
     }
 }
 
-public class Child : MonoBehaviour
+public class Child
 {
     public Transform transform;
     public bool isAvailable;
@@ -103,7 +93,7 @@ public class Child : MonoBehaviour
         }
         else 
         {
-            transform.position = new Vector2(0f, -10f);
+            transform.position = new Vector2(end, 10f);
             isAvailable = true;
         }
     }
