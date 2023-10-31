@@ -93,7 +93,7 @@ public class Child
         }
         else 
         {
-            transform.position = new Vector2(end, 10f);
+            transform.position = new Vector2(end, 20f);
             isAvailable = true;
         }
     }
