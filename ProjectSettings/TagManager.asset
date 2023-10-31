@@ -4,16 +4,23 @@
 TagManager:
   serializedVersion: 2
   tags:
+  - Water
+  - RespawnPoint
+  - Cocaine
+  - Weed
   - WaterDrop
+  - WaterTag
+  - WaterWall
+  - Mushroom
   - Circle
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - WaterWall
   - Water
   - UI
-  - 
+  - Player
   - 
   - 
   - 
