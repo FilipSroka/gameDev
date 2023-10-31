@@ -5,6 +5,13 @@ TagManager:
   serializedVersion: 2
   tags:
   - WaterDrop
+  - Cocaine
+  - Weed
+  - Mushroom
+  - Water
+  - RespawnPoint
+  - WaterWall
+  - Drug
   layers:
   - Default
   - TransparentFX
@@ -39,6 +46,12 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 3711079139
+    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Terrain
+    uniqueID: 1582317463
     locked: 0
