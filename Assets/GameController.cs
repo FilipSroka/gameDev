@@ -1,11 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class GameController : MonoBehaviour
 {
     // Reference to the Map GameObject that contains the children.
-    public List<(Transform, bool)> childrenList;
-    public Queue<(Transform, int)> queue;
+    public List<Child> childrenList;
+    public Queue<Child> queue;
     public GameObject mapGameObject;
     public GameObject player;
     public float end;
@@ -14,14 +15,13 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         // Create a list to keep track of the children.
-        childrenList = new List<(Transform, bool)>();
-        queue = new Queue<(Transform, int)>();
+        childrenList = new List<Child>();
+        queue = new Queue<Child>();
+
 
         // Iterate through all children of the mapGameObject and add them to the list.
         foreach (Transform child in mapGameObject.transform)
-        {
-            childrenList.Add((child, true));
-        }
+            childrenList.Add(new Child(child));
 
         // Randomly select two children from the list.
         int index1 = Random.Range(0, childrenList.Count);
@@ -32,14 +32,12 @@ public class GameController : MonoBehaviour
         } while (index2 == index1);
 
         // Move the selected children to the specified 2D coordinates and set their availability to false.
-        childrenList[index1].Item1.position = new Vector2(end, -2f);
-        childrenList[index1] = (childrenList[index1].Item1, false);
-        queue.Enqueue((childrenList[index1].Item1, index1));
+        childrenList[index1].changeState(end);
+        queue.Enqueue(childrenList[index1]);
 
         end += width;
-        childrenList[index2].Item1.position = new Vector2(end, -2f);
-        childrenList[index2] = (childrenList[index2].Item1, false);
-        queue.Enqueue((childrenList[index2].Item1, index2));
+        childrenList[index2].changeState(end);
+        queue.Enqueue(childrenList[index2]);
     }
 
     private void Update() 
@@ -48,25 +46,56 @@ public class GameController : MonoBehaviour
 
         if (end - playerPosition < 30.0f)
         {
-            // Randomly select one child from the list.
-            int index;
-            do
-            {
-                index = Random.Range(0, childrenList.Count);
-            } while (!childrenList[index].Item2);
+            List<Child> selection = getSelection();
 
+            // Randomly select one child from the list.
+            int index = Random.Range(0, selection.Count);
             end += width;
-            childrenList[index].Item1.position = new Vector2(end, -2f);
-            childrenList[index] = (childrenList[index].Item1, false);
-            queue.Enqueue((childrenList[index].Item1, index));
+            selection[index].changeState(end);
+            queue.Enqueue(selection[index]);
 
             if (queue.Count > 5)
-            {
-                (Transform t, int i) tmp = queue.Dequeue();
-                tmp.t.position = new Vector2(0f, -10f);
-                childrenList[tmp.i] = (tmp.t, true);
-            }
+                queue.Dequeue().changeState(end);
         }
+    }
+
+    private List<Child> getSelection() 
+    {
+        List<Child> selection = new List<Child>();
+        int maxCount = childrenList.Max(child => child.count);
+        foreach (Child c in childrenList)
+            if (c.isAvailable) 
+                for(int i = 0; i < maxCount-c.count+1; i++)
+                    selection.Add(c);
+        return selection;
     }
 }
 
+public class Child
+{
+    public Transform transform;
+    public bool isAvailable;
+    public int count;
+
+    public Child(Transform t)
+    {
+        transform = t;
+        isAvailable = true;
+        count = 0;
+    }
+
+    public void changeState(float end) 
+    {
+        if (isAvailable) {
+            transform.position = new Vector2(end, -2f);
+            isAvailable = false;
+            count += 1;
+        }
+        else 
+        {
+            transform.position = new Vector2(end, 10f);
+            isAvailable = true;
+        }
+    }
+
+}

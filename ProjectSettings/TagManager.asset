@@ -12,6 +12,7 @@ TagManager:
   - WaterTag
   - WaterWall
   - Mushroom
+  - Circle
   layers:
   - Default
   - TransparentFX
