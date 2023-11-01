@@ -116,7 +116,7 @@ public class Child
         if (isAvailable) {
             transform.position = new Vector2(end, -2f);
             isAvailable = false;
-            count += 1;
+            count++;
         }
         else 
         {
