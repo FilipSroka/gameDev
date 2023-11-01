@@ -106,7 +106,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Water"))
+        if (collision.gameObject.CompareTag("WaterDrop"))
         {
             float distanceTraveled = transform.position.x - startingPoint.x;
             if (distanceTraveled > maxDistance)
