@@ -35,10 +35,15 @@ public class GameController : MonoBehaviour
             index2 = Random.Range(1, childrenList.Count);
         } while (index2 == index1);
 
+
+        index1 = 5; // DELETE
+
         end = getEnd(childrenList[index1]);
         childrenList[index1].changeState(end);
         queue.Enqueue(childrenList[index1]);
         last = childrenList[index1];
+
+        index2 = 4; // DELETE
 
         end = getEnd(childrenList[index2]);
         childrenList[index2].changeState(end);
@@ -63,7 +68,7 @@ public class GameController : MonoBehaviour
             queue.Enqueue(selection[index]);
             last = selection[index];
 
-            if (queue.Count > 3)
+            if (queue.Count > 5)
                 queue.Dequeue().changeState(end);
         }
     }
@@ -91,8 +96,12 @@ public class GameController : MonoBehaviour
         // Calculate the x-coordinate for the right edge of the first block
         float firstEndX = firstTransform.position.x + firstWidth * 0.5f;
 
+        Debug.Log(firstEndX+"END");
+
         // Calculate the desired x-coordinate for the left edge of the second block to touch the right edge of the first block
         float xCoordinate = firstEndX + secondWidth * 0.5f;
+
+        Debug.Log(xCoordinate+"X");
 
         return xCoordinate;
     }
