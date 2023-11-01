@@ -8,6 +8,12 @@ using UnityEngine.UI;  // Required for Image component
 
 public class PlayerMovement : MonoBehaviour
 {
+    private class DrugEffectInstance
+    {
+        public float timeElapsed;
+        public float peakTime;
+        public float totalDuration;
+    }
     public float moveSpeed = 5.0f;
     public float jumpForce = 7.0f;
     public Transform playerTransform;
@@ -29,6 +35,8 @@ public class PlayerMovement : MonoBehaviour
     private bool isUnderMushroomEffect = false;
     private Transform currentRespawnPoint;
 
+    private Dictionary<string, List<DrugEffectInstance>> drugEffects = new Dictionary<string, List<DrugEffectInstance>>();
+
     // Delayed Input
     private float lastInputTime;
 
@@ -38,6 +46,8 @@ public class PlayerMovement : MonoBehaviour
     private float weedDelay;
 
     private float maxDistance = 0;
+
+    private bool current_color_routine = false; // Add this flag
 
     void Start()
     {
@@ -51,7 +61,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        if (isUnderWeedEffect)
+        if (weed_effect > 0)
         {
             // This creates a slight delay before processing input
             StartCoroutine(DelayedInputProcessing());
@@ -61,14 +71,17 @@ public class PlayerMovement : MonoBehaviour
             ProcessInput();
         }
 
-        UpdateCocaineEffect();
-        UpdateWeedEffect();
-        UpdateMushroomEffect();
+        UpdateDrugEffects();
+
+
+        Debug.Log("Cocaine Effect: " + cocaine_effect);
+        Debug.Log("Weed Effect: " + weed_effect);
+        Debug.Log("Mushroom Effect: " + mushroom_effect);
     }
 
     private IEnumerator DelayedInputProcessing()
     {
-        float delay = 0.1f * (weed_effect / 100f);  // This will result in a maximum delay of 0.1 seconds at full weed effect
+        float delay = 1f * (weed_effect / 100f);  // This will result in a maximum delay of 0.1 seconds at full weed effect
         yield return new WaitForSeconds(delay);
         ProcessInput();
     }
@@ -126,20 +139,95 @@ public class PlayerMovement : MonoBehaviour
         {
             Die();
         }
-        else if (other.CompareTag("Cocaine"))
+        if (other.CompareTag("Cocaine") || other.CompareTag("Weed") || other.CompareTag("Mushroom"))
+                {
+                    ApplyDrugEffect(other.tag);
+                }
+    }
+
+    /// DRUGS
+
+    private void ApplyDrugEffect(string drug)
+    {
+        float peakTime = 0;
+        float totalDuration = 0;
+
+        switch (drug)
         {
-            cocaine_effect = 100;
-            isUnderCocaineEffect = true;
+            case "Cocaine":
+                peakTime = 10;
+                totalDuration = 30;
+                break;
+            case "Weed":
+                peakTime = 20;
+                totalDuration = 40;
+                break;
+            case "Mushroom":
+                peakTime = 30;
+                totalDuration = 50;
+                break;
         }
-        else if (other.CompareTag("Weed"))
+
+        if (!drugEffects.ContainsKey(drug))
         {
-            weed_effect = 100;
-            isUnderWeedEffect = true;
+            drugEffects[drug] = new List<DrugEffectInstance>();
         }
-        else if (other.CompareTag("Mushroom"))
+
+        drugEffects[drug].Add(new DrugEffectInstance { timeElapsed = 0, peakTime = peakTime, totalDuration = totalDuration });
+    }
+
+    private void UpdateDrugEffects()
+    {
+        foreach (var drug in drugEffects.Keys)
         {
-            mushroom_effect = 100;
-            isUnderMushroomEffect = true;
+            float totalEffect = 0;
+            var effectsList = drugEffects[drug];
+
+            for (int i = effectsList.Count - 1; i >= 0; i--)
+            {
+                DrugEffectInstance effect = effectsList[i];
+                effect.timeElapsed += Time.deltaTime;
+
+                float x = effect.timeElapsed;
+                float mu = effect.peakTime;
+                float sigma = (effect.totalDuration - effect.peakTime) / 3;  // Assuming sigma is 1/3 of the duration after peak
+
+                // Amplitude is set to 50
+                float A = 50f;
+
+                float drugEffect = A * Mathf.Exp(-Mathf.Pow(x - mu, 2) / (2 * Mathf.Pow(sigma, 2)));
+                totalEffect += drugEffect;
+
+                if (effect.timeElapsed >= effect.totalDuration)
+                {
+                    effectsList.RemoveAt(i);
+                    continue;
+                }
+            }
+
+            // Apply effects based on the drug
+            if (drug == "Cocaine")
+            {
+                cocaine_effect = totalEffect;
+                moveSpeed = baseSpeed * (1 + (cocaine_effect / 100f));
+                jumpForce = baseJumpForce * (1 + 0.5f * (cocaine_effect / 100f));
+                StartCoroutine(CameraShake(cocaine_effect));
+            }
+            else if (drug == "Weed")
+            {
+                weed_effect = totalEffect;
+                moveSpeed = baseSpeed * (1 - 0.2f * (weed_effect / 100f));
+                jumpForce = baseJumpForce * (1 - 0.2f * (weed_effect / 100f));
+                if (weed_effect > 0 && !current_color_routine)
+                {
+                    StartCoroutine(TemporalColorShift());
+                }
+            }
+            else if (drug == "Mushroom")
+            {
+                mushroom_effect = totalEffect;
+                circleManager.SpawnCirclesWithIntensity(mushroom_effect);
+            }
         }
     }
 
@@ -198,7 +286,7 @@ public class PlayerMovement : MonoBehaviour
             jumpForce = baseJumpForce * (1 + 0.5f * (cocaine_effect / 100f));
 
             // Call camera shake
-            StartCoroutine(CameraShake());
+            StartCoroutine(CameraShake(cocaine_effect));
 
             if (cocaine_effect <= 0)
             {
@@ -242,31 +330,31 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private IEnumerator CameraShake()
+    private IEnumerator CameraShake(float effect)
     {
         float elapsed = 0.0f;
         float duration = 0.5f;  // Fixed duration for shake effect
-        float maxShakeMagnitude = 0.1f;  // Adjust this value to control maximum shake magnitude
+        float maxShakeMagnitude = 0.05f;  // Adjust this value to control maximum shake magnitude
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             
-            float magnitude = Mathf.Lerp(0, maxShakeMagnitude, cocaine_effect / 100f);  // Interpolate based on cocaine_effect
+            float magnitude = Mathf.Lerp(0, maxShakeMagnitude, effect / 100f);  // Interpolate based on cocaine_effect
 
             // Get the camera's desired position, based on the player's position
             Vector3 playerPosition = new Vector3(playerTransform.position.x, Camera.main.transform.position.y, Camera.main.transform.position.z);
             
             // Apply the shake effect based on the magnitude
             Vector3 offset = UnityEngine.Random.insideUnitSphere * magnitude;
+            offset.z = 0;
             Camera.main.transform.position = playerPosition + offset;
             
             yield return null;
         }
 
-        // Ensure the camera continues following the player after the shake effect ends
-        Camera.main.transform.position = new Vector3(playerTransform.position.x, Camera.main.transform.position.y, Camera.main.transform.position.z);
     }
+
 
     private IEnumerator HandleBufferedInputs()
     {
@@ -280,13 +368,22 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator TemporalColorShift()
     {
+        current_color_routine = true;  // Set the flag to true
+
         while (weed_effect > 0)
         {
-            float intensity = weed_effect / 100f;  // Normalize effect between 0 and 1
-            Camera.main.backgroundColor = Color.Lerp(originalColor, new Color(0.5f, 0.5f, 0.7f), intensity);
-            yield return null;  // Wait until next frame to adjust color
+            float intensity = weed_effect / 100f;
+            float transitionSpeed = Mathf.Lerp(0.2f, 5f, intensity);
+            Color targetColor = new Color(
+                UnityEngine.Random.Range(0.0f, 1.0f),
+                UnityEngine.Random.Range(0.0f, 1.0f),
+                UnityEngine.Random.Range(0.0f, 1.0f)
+            );
+            Camera.main.backgroundColor = Color.Lerp(Camera.main.backgroundColor, targetColor, transitionSpeed * Time.deltaTime);
+            yield return null;
         }
-        Camera.main.backgroundColor = originalColor;
+
+        current_color_routine = false;  // Reset the flag when coroutine ends
     }
 
 }
