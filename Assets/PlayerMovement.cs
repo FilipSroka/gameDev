@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement; // Add this line
 using UnityEngine;
 using System;
 using TMPro;
@@ -19,10 +20,13 @@ public class PlayerMovement : MonoBehaviour
     private float baseSpeed;
     private float baseJumpForce;
     private int lives = 3;
+    public CircleManager circleManager;
 
     private float cocaine_effect = 0;
     private float weed_effect = 0;
-    private bool isUnderEffect = false;
+    private float mushroom_effect = 0;
+    private bool isUnderCocaineEffect = false;
+    private bool isUnderMushroomEffect = false;
     private Transform currentRespawnPoint;
 
     // Delayed Input
@@ -32,6 +36,8 @@ public class PlayerMovement : MonoBehaviour
     private Queue<Action> inputBuffer = new Queue<Action>();
     private Color originalColor;
     private float weedDelay;
+
+    private float maxDistance = 0;
 
     void Start()
     {
@@ -57,6 +63,7 @@ public class PlayerMovement : MonoBehaviour
 
         UpdateCocaineEffect();
         UpdateWeedEffect();
+        UpdateMushroomEffect();
     }
 
     private IEnumerator DelayedInputProcessing()
@@ -88,6 +95,11 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Water"))
         {
+            float distanceTraveled = transform.position.x - startingPoint.x;
+            if (distanceTraveled > maxDistance)
+            {
+                maxDistance = distanceTraveled;
+            }
             lives--;
             if (lives <= 0)
             {
@@ -117,29 +129,49 @@ public class PlayerMovement : MonoBehaviour
         else if (other.CompareTag("Cocaine"))
         {
             cocaine_effect = 100;
-            isUnderEffect = true;
+            isUnderCocaineEffect = true;
         }
         else if (other.CompareTag("Weed"))
         {
             weed_effect = 100;
             isUnderWeedEffect = true;
         }
+        else if (other.CompareTag("Mushroom"))
+        {
+            mushroom_effect = 100;
+            isUnderMushroomEffect = true;
+        }
     }
 
     void Die()
     {
-        float distanceTraveled = transform.position.x - startingPoint.x;
-        deathText.text = "You died! Distance traveled: " + distanceTraveled.ToString("F2") + " units.";
-        StartCoroutine(DeathDelay());
+        deathText.text = "You died! Distance traveled: " + maxDistance.ToString("F2") + " units.";
+        deathText.fontSize = 72; 
+        RectTransform rt = deathText.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(600, 200);  // Width: 600, Height: 200
+        // Position the text in the center
+        rt.anchoredPosition = Vector3.zero;
+        StartCoroutine(RestartGameAfterDelay());
+    
     }
 
-    IEnumerator DeathDelay()
+    IEnumerator RestartGameAfterDelay()
     {
-        yield return new WaitForSeconds(2);
-        transform.position = startingPoint;
-        rb.velocity = Vector2.zero;
-        deathText.text = "";
+        // Disable player movement and other gameplay elements here
+        // For example, set a flag or disable a script/component
+
+        // Example:
+        // this.enabled = false;  // Disables this script
+
+        yield return new WaitForSeconds(5);  // Wait for 5 seconds
+
+        // Restart the game by reloading the current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
+
 
     void Respawn()
     {
@@ -171,7 +203,7 @@ public class PlayerMovement : MonoBehaviour
             if (cocaine_effect <= 0)
             {
                 cocaine_effect = 0;
-                isUnderEffect = false;
+                isUnderCocaineEffect = false;
             }
         }
     }
@@ -195,6 +227,20 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void UpdateMushroomEffect()
+    {
+        if (isUnderMushroomEffect)
+        {
+            mushroom_effect -= 10 * Time.deltaTime;
+            circleManager.SpawnCirclesWithIntensity(mushroom_effect);
+
+            if (mushroom_effect <= 0)
+            {
+                mushroom_effect = 0;
+                isUnderMushroomEffect = false;
+            }
+        }
+    }
 
     private IEnumerator CameraShake()
     {
