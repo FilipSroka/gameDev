@@ -68,7 +68,6 @@ public class LevelManager : MonoBehaviour
         nextSegment.position = new Vector2(currentSegment.position.x + currentSegmentLocalOffset + nextSegmentLocalOffset, currentSegment.position.y);
     }
 
-
     private void UpdateCurrentSegmentWidth()
     {
         currentSegmentWidth = currentSegment.Find("Water").GetComponent<BoxCollider2D>().size.x;

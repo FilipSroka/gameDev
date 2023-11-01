@@ -1,17 +1,40 @@
+// CircleSpawner.cs
 using UnityEngine;
 using System.Collections.Generic;
 
 public class CircleSpawner : MonoBehaviour
 {
-    public int maxCircles = 20; // Maximum number of circles
-    public float spawnRate = 2.0f;
-    public float minDiameter = 0.5f;
-    public float maxDiameter = 2.0f;
+    public float minSpawnRate = 2f;
+    public float maxSpawnRate = 10f;
+    public float minDiameter = 5f;
+    public float maxDiameter = 10f;
+    public int maxCircles = 20;
     public Color[] randomColors;
-
-    private Camera mainCamera;
+    
     private List<GameObject> circles = new List<GameObject>();
-    private int circleCount = 0;
+    private Camera mainCamera;
+    private float spawnRate;
+    private int circleCount = 0;  // Define the circleCount variable
+    
+    public void SetIntensity(float intensity)
+    {
+        spawnRate = Mathf.Lerp(maxSpawnRate, minSpawnRate, intensity / 100f);
+        maxCircles = Mathf.FloorToInt(Mathf.Lerp(1, maxCircles, intensity / 100f));
+        
+        if (intensity == 0)
+        {
+            foreach (var circle in circles)
+            {
+                Destroy(circle);
+            }
+            circles.Clear();
+        }
+        else
+        {
+            CancelInvoke("SpawnCircle");
+            InvokeRepeating("SpawnCircle", 0f, spawnRate);
+        }
+    }
 
     private void Start()
     {
@@ -134,9 +157,6 @@ public class CircleSpawner : MonoBehaviour
                 new Color(0.0f, 0.4f, 0.8f, 1.0f)   // Cool Deep Blue
             };
         }
-
-
-        InvokeRepeating("SpawnCircle", 0f, spawnRate);
     }
 
     private bool IsTagDefined(string tag)
