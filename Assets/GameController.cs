@@ -36,14 +36,14 @@ public class GameController : MonoBehaviour
         } while (index2 == index1);
 
 
-        // index1 = 10; // DELETE
+        // index1 = 1; // DELETE
 
         end = getEnd(childrenList[index1]);
         childrenList[index1].changeState(end);
         queue.Enqueue(childrenList[index1]);
         last = childrenList[index1];
 
-        // index2 = 1; // DELETE
+        // index2 = 2; // DELETE
 
         end = getEnd(childrenList[index2]);
         childrenList[index2].changeState(end);
